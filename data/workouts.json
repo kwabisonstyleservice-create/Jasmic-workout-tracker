@@ -1,0 +1,89 @@
+[
+  {
+    "id": "biceps",
+    "title": "Biceps",
+    "accent": "#c7ff4a",
+    "exercises": [
+      { "slug": "barbell-curl", "name": "Barbell curl", "equipment": "Barbell", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "dumbbell-curl", "name": "Dumbbell curl", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "ez-bar-curl", "name": "EZ-bar curl", "equipment": "EZ bar", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "dumbbell-hammer-curl", "name": "Dumbbell hammer curl", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "preacher-curl", "name": "Preacher curl", "equipment": "Barbell + bench", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "cable-curl", "name": "Cable curl", "equipment": "Cable", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "concentration-curl", "name": "Concentration curl", "equipment": "Dumbbell", "sets": 4, "reps": "15, 12, 10, 8" }
+    ]
+  },
+  {
+    "id": "back",
+    "title": "Back",
+    "accent": "#ff6b35",
+    "exercises": [
+      { "slug": "lat-pulldown", "name": "Lat pulldown", "equipment": "Cable", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "seated-cable-row", "name": "Seated cable row", "equipment": "Cable", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "machine-back-row", "name": "Machine back row", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "bent-over-barbell-row", "name": "Bent-over barbell row", "equipment": "Barbell", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "single-dumbbell-row", "name": "Single-arm dumbbell row", "equipment": "Dumbbell + bench", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "deadlift-light", "name": "Light deadlift", "equipment": "Barbell", "sets": 4, "reps": "10, 8, 6, 5, 4", "note": "The source lists four sets and five rep targets; kept exactly as supplied." },
+      { "slug": "t-bar-row", "name": "T-bar row", "equipment": "T-bar", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "hyperextension", "name": "Hyperextension", "equipment": "Roman chair", "sets": 4, "reps": "12, 12, 12, 12" }
+    ]
+  },
+  {
+    "id": "shoulders",
+    "title": "Shoulders",
+    "accent": "#54d6ff",
+    "exercises": [
+      { "slug": "military-press", "name": "Military press", "equipment": "Barbell", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "shoulder-dumbbell-press", "name": "Shoulder dumbbell press", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "machine-shoulder-press", "name": "Machine shoulder press", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "lateral-side-raise", "name": "Lateral side raise", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "front-raise", "name": "Front raise", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "barbell-upright-row", "name": "Barbell upright row", "equipment": "Barbell", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "face-pull", "name": "Face pull", "equipment": "Cable", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "rear-delt-fly", "name": "Rear delt fly", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "dumbbell-shrug", "name": "Dumbbell shrug", "equipment": "Dumbbells", "sets": 4, "reps": "15, 12, 10, 8" }
+    ]
+  },
+  {
+    "id": "chest",
+    "title": "Chest",
+    "accent": "#ffce45",
+    "exercises": [
+      { "slug": "barbell-bench-press", "name": "Barbell bench press", "equipment": "Barbell + bench", "sets": 4, "reps": "8–12" },
+      { "slug": "incline-dumbbell-press", "name": "Incline dumbbell press", "equipment": "Dumbbells + bench", "sets": 4, "reps": "8–12" },
+      { "slug": "decline-bench-press", "name": "Decline bench press", "equipment": "Barbell + bench", "sets": 3, "reps": "10–15" },
+      { "slug": "dumbbell-chest-fly", "name": "Dumbbell chest fly", "equipment": "Dumbbells + bench", "sets": 3, "reps": "12–15" },
+      { "slug": "push-up", "name": "Push-ups", "equipment": "Bodyweight", "sets": 3, "reps": "Maximum" },
+      { "slug": "cable-crossover", "name": "Cable crossover", "equipment": "Cable", "sets": 3, "reps": "12–15" },
+      { "slug": "machine-chest-press", "name": "Machine chest press", "equipment": "Machine", "sets": 4, "reps": "12–15" }
+    ]
+  },
+  {
+    "id": "legs",
+    "title": "Legs",
+    "accent": "#c7ff4a",
+    "exercises": [
+      { "slug": "barbell-squat", "name": "Barbell squat", "equipment": "Barbell", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "leg-press", "name": "Leg press", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "hack-squat", "name": "Hack squat", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "leg-curl", "name": "Leg curl", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "leg-extension", "name": "Leg extension", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "hip-thrust", "name": "Hip thrust", "equipment": "Barbell + bench", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "barbell-lunge", "name": "Barbell lunges", "equipment": "Barbell", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "hip-adductor-abductor", "name": "Hip adductor / abductor", "equipment": "Machine", "sets": 4, "reps": "15, 12, 10, 8" },
+      { "slug": "calf-raise", "name": "Calf raises", "equipment": "Machine or bodyweight", "sets": 4, "reps": "15, 12, 10, 8" }
+    ]
+  },
+  {
+    "id": "triceps",
+    "title": "Triceps",
+    "accent": "#ff6b35",
+    "exercises": [
+      { "slug": "skull-crusher", "name": "Skull crusher", "equipment": "EZ bar + bench", "sets": 4, "reps": "12–15" },
+      { "slug": "overhead-dumbbell-extension", "name": "Overhead dumbbell extension", "equipment": "Dumbbell", "sets": 4, "reps": "12–15" },
+      { "slug": "cable-pushdown", "name": "Cable pushdown", "equipment": "Cable", "sets": 4, "reps": "12–15" },
+      { "slug": "close-grip-bench-press", "name": "Close-grip bench press", "equipment": "Barbell + bench", "sets": 4, "reps": "12–15" },
+      { "slug": "dumbbell-kickback", "name": "Dumbbell kickback", "equipment": "Dumbbells", "sets": 4, "reps": "12–15" }
+    ]
+  }
+]

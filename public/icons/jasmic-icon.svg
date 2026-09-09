@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">JASMIC Workout Tracker</title>
+  <desc id="desc">A bold letter J with a training bar.</desc>
+  <rect width="512" height="512" rx="112" fill="#09090b"/>
+  <path d="M145 105h235v193c0 78-49 121-126 121-64 0-111-31-128-88l81-29c8 24 23 37 47 37 29 0 44-17 44-51V184H145z" fill="#c7ff4a"/>
+  <rect x="83" y="89" width="346" height="34" rx="17" fill="#ff6b35"/>
+  <rect x="58" y="72" width="33" height="68" rx="12" fill="#f4f4f5"/>
+  <rect x="421" y="72" width="33" height="68" rx="12" fill="#f4f4f5"/>
+</svg>
