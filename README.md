@@ -4,6 +4,10 @@ A mobile-first workout and body-progress tracker built with Next.js, TypeScript,
 
 ## What is implemented
 
+- Guided first-use checklist that leads members through their plan, baseline measurements and first completed workout.
+- Confidence centre and getting-started guide with clear privacy, account-control and safe-use information.
+- Timed workout sessions with set-completion progress, 90-second rest timer, local draft autosave and pause/resume recovery.
+- Online/offline connection feedback and friendly loading/error recovery screens.
 - Interactive dashboard with workout count, training volume, streak and body-weight change.
 - Workout logger for repetitions and kilograms, with persistent set history.
 - Six starter routines transcribed from the supplied images: biceps, back, shoulders, chest, legs and triceps.
@@ -119,3 +123,7 @@ npm run db:seed
 - The source image for light deadlifts states “4 sets” but lists five rep targets (`10, 8, 6, 5, 4`); the seed data preserves that source exactly so it can be corrected by the product owner.
 - Review the included privacy text against the final production providers and business process before release.
 - Configure email verification and password recovery before public registration.
+
+## v0.2 confidence release
+
+Version 0.2 focuses on making first-time members feel informed and in control. It adds a visible setup path, plain-language help, workout draft protection, clearer connection state and recovery screens. Draft workout values are stored only in the member's current browser until the workout is submitted; successful submission removes the local draft.
