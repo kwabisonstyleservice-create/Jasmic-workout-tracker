@@ -275,9 +275,10 @@ function ExerciseRow({ exercise, index }: { exercise: CatalogExercise; index: nu
   );
 }
 
-function TrainingLibrary({ catalog, onStart, onAddExercise }: { catalog: WorkoutCategory[]; onStart: (category: WorkoutCategory) => void; onAddExercise: () => void }) {
-  const [activeCategoryId, setActiveCategoryId] = useState(catalog[0]?.id ?? "biceps");
-  const active = catalog.find((item) => item.id === activeCategoryId) ?? catalog[0];
+function TrainingLibrary({ catalog, routines, activeCategoryId, onSelect, onStart, onAddExercise, onEditRoutine }: { catalog: WorkoutCategory[]; routines: WorkoutCategory[]; activeCategoryId: string; onSelect: (id: string) => void; onStart: (category: WorkoutCategory) => void; onAddExercise: () => void; onEditRoutine: (routine: WorkoutCategory) => void }) {
+  const trainingOptions = [...catalog, ...routines];
+  const active = trainingOptions.find((item) => item.id === activeCategoryId) ?? trainingOptions[0];
+  const isPersonalRoutine = routines.some((routine) => routine.id === active.id);
 
   return (
     <div className="space-y-6">
@@ -286,14 +287,16 @@ function TrainingLibrary({ catalog, onStart, onAddExercise }: { catalog: Workout
         title="Choose what to train"
         action={<Button variant="outline" className="rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white" onClick={onAddExercise}><Plus className="size-4" /> Add exercise</Button>}
       />
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" aria-label="Muscle groups">
-        {catalog.map((category) => (
+      <div className="flex flex-wrap gap-2" aria-label="Training workouts">
+        {trainingOptions.map((category) => (
           <button
             key={category.id}
-            onClick={() => setActiveCategoryId(category.id)}
-            className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-black transition ${activeCategoryId === category.id ? "border-lime-300 bg-lime-300 text-zinc-950" : "border-white/10 bg-zinc-900 text-zinc-400 hover:text-white"}`}
+            type="button"
+            aria-pressed={active.id === category.id}
+            onClick={() => onSelect(category.id)}
+            className={`max-w-full break-words rounded-full border px-5 py-2.5 text-sm font-black transition ${active.id === category.id ? "border-lime-300 bg-lime-300 text-zinc-950" : "border-white/10 bg-zinc-900 text-zinc-400 hover:text-white"}`}
           >
-            {category.title}
+            {category.title}{routines.some((routine) => routine.id === category.id) && <span className="ml-2 text-xs font-medium">My workout</span>}
           </button>
         ))}
       </div>
@@ -302,15 +305,15 @@ function TrainingLibrary({ catalog, onStart, onAddExercise }: { catalog: Workout
         <article className="workout-poster rounded-[2rem] border border-white/10 p-6 sm:p-8" style={{ "--poster-accent": active.accent } as React.CSSProperties}>
           <div className="relative z-10 flex min-h-[28rem] flex-col justify-between">
             <div>
-              <span className="tag border-white/10 bg-white/5 text-zinc-300">Starter routine</span>
+              <span className="tag border-white/10 bg-white/5 text-zinc-300">{isPersonalRoutine ? "My workout · Private" : "Starter routine"}</span>
               <p className="mt-8 text-sm font-black uppercase tracking-[0.24em] text-zinc-400">Train</p>
-              <h2 className="mt-2 text-6xl font-black uppercase leading-[0.85] tracking-[-0.07em] text-white sm:text-7xl">{active.title}</h2>
+              <h2 className="mt-2 break-words text-4xl font-black uppercase leading-tight tracking-[-0.04em] text-white sm:text-5xl">{active.title}</h2>
               <div className="mt-5 h-1.5 w-20 rounded-full" style={{ background: active.accent }} />
             </div>
             <div>
               <div className="mb-5 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-white/10 bg-black/20 p-4"><p className="text-3xl font-black text-white">{active.exercises.length}</p><p className="mt-1 text-sm text-zinc-400">Exercises</p></div>
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-4"><p className="text-3xl font-black text-white">~60</p><p className="mt-1 text-sm text-zinc-400">Minutes</p></div>
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-4"><p className="text-3xl font-black text-white">{active.exercises.reduce((total, exercise) => total + exercise.sets, 0)}</p><p className="mt-1 text-sm text-zinc-400">Sets</p></div>
               </div>
               <Button className="h-14 w-full rounded-2xl bg-white text-base font-black text-zinc-950 hover:bg-zinc-200" onClick={() => onStart(active)}><Play className="size-5 fill-current" /> Start {active.title.toLowerCase()}</Button>
             </div>
@@ -319,7 +322,7 @@ function TrainingLibrary({ catalog, onStart, onAddExercise }: { catalog: Workout
         <article className="surface-card">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div><p className="eyebrow">Exercises</p><h3 className="mt-2 text-xl font-black text-white">{active.title} routine</h3></div>
-            <span className="text-sm font-medium text-zinc-500">Editable later</span>
+            {isPersonalRoutine && <Button variant="outline" className="shrink-0 rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white" onClick={() => onEditRoutine(active)}>Edit workout</Button>}
           </div>
           <div className="space-y-2.5">
             {active.exercises.map((exercise, index) => <ExerciseRow key={exercise.slug} exercise={exercise} index={index} />)}
@@ -602,6 +605,7 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [dayOpen, setDayOpen] = useState(false);
   const [routines, setRoutines] = useState(initialData.routines ?? []);
+  const [trainingSelection, setTrainingSelection] = useState(initialData.catalog[0]?.id ?? "");
   const [routineEditor, setRoutineEditor] = useState<WorkoutCategory | "new" | null>(null);
   const [measurements, setMeasurements] = useState(initialData.measurements);
   const [catalog, setCatalog] = useState(initialData.catalog);
@@ -638,7 +642,7 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
             {!routines.length && <p className="text-zinc-400">Build a reusable workout with your choice of exercises, sets and reps.</p>}
             <div className="grid gap-3 sm:grid-cols-2">{routines.map((routine) => <article key={routine.id} className="surface-card"><h3 className="text-xl font-bold">{routine.title}</h3><p className="mt-2 text-sm text-zinc-400">{routine.exercises.length} exercises · {routine.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)} sets</p><div className="mt-4 flex gap-2"><Button className="bg-lime-300 text-zinc-950" onClick={() => setActiveWorkout(routine)}>Start workout</Button><Button variant="outline" onClick={() => setRoutineEditor(routine)}>Edit</Button></div></article>)}</div>
           </section>}
-          {view === "train" && <TrainingLibrary catalog={data.catalog} onStart={(category) => setActiveWorkout(category)} onAddExercise={() => setExerciseOpen(true)} />}
+          {view === "train" && <TrainingLibrary catalog={data.catalog} routines={routines} activeCategoryId={trainingSelection} onSelect={setTrainingSelection} onEditRoutine={setRoutineEditor} onStart={(category) => setActiveWorkout(category)} onAddExercise={() => setExerciseOpen(true)} />}
           {view === "progress" && <ProgressView data={data} onAddMeasurement={() => setMeasurementOpen(true)} />}
           {view === "plan" && <PlanView catalog={data.catalog} days={data.programDays} onAddDay={() => setDayOpen(true)} />}
         </div>
@@ -648,7 +652,7 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
         {navItems.map((item) => { const Icon = item.icon; const active = view === item.value; return <button key={item.value} onClick={() => changeView(item.value)} className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[0.72rem] font-bold ${active ? "bg-lime-300 text-zinc-950" : "text-zinc-500"}`}><Icon className="size-5" />{item.label}</button>; })}
       </nav>
 
-      {routineEditor && <RoutineBuilder catalog={catalog} routine={routineEditor === "new" ? undefined : routineEditor} isDemo={isDemo} onClose={() => setRoutineEditor(null)} onSaved={(routine) => setRoutines((current) => current.some((item) => item.id === routine.id) ? current.map((item) => item.id === routine.id ? routine : item) : [...current, routine])} />}
+      {routineEditor && <RoutineBuilder catalog={catalog} routine={routineEditor === "new" ? undefined : routineEditor} isDemo={isDemo} onClose={() => setRoutineEditor(null)} onSaved={(routine) => { setRoutines((current) => current.some((item) => item.id === routine.id) ? current.map((item) => item.id === routine.id ? routine : item) : [...current, routine]); setTrainingSelection(routine.id); changeView("train"); }} />}
       <WorkoutDialog key={activeWorkout?.id ?? "none"} category={activeWorkout} open={Boolean(activeWorkout)} onOpenChange={(open) => !open && setActiveWorkout(null)} isDemo={isDemo} />
       <MeasurementDialog open={measurementOpen} onOpenChange={setMeasurementOpen} isDemo={isDemo} onSaved={(measurement) => setMeasurements((current) => [...current, measurement].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)))} />
       <AddExerciseDialog open={exerciseOpen} onOpenChange={setExerciseOpen} isDemo={isDemo} onSaved={(exercise) => setCatalog((current) => {
