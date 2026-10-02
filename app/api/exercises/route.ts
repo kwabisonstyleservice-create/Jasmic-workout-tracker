@@ -7,13 +7,15 @@ import { getRequestUser } from "@/lib/auth";
 import { apiError, databaseUnavailable, invalidInput, jsonRequest } from "@/lib/api";
 import { isSameOrigin } from "@/lib/security";
 
+import { MAX_SETS_PER_EXERCISE } from "@/lib/workout-validation";
+
 export const runtime = "nodejs";
 
 const exerciseSchema = z.object({
   name: z.string().trim().min(2).max(100),
   muscleGroup: z.string().trim().min(2).max(40),
   equipment: z.string().trim().min(2).max(60),
-  sets: z.coerce.number().int().min(1).max(2147483647),
+  sets: z.coerce.number().int().min(1).max(MAX_SETS_PER_EXERCISE),
   reps: z.string().trim().min(1).max(30),
 });
 

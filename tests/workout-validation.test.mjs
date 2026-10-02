@@ -39,3 +39,11 @@ test('invalid and ambiguous input is rejected', () => {
   assert.equal(workoutSchema.safeParse({ ...base, sets: [row, row] }).success, false);
   assert.equal(workoutSchema.safeParse({ ...base, sets: completedSets('bench', [{ reps: '', weightKg: '', completed: true }]) }).success, false);
 });
+
+
+test('oversized routines and session payloads are rejected', () => {
+  const target = { reps: 10, weightKg: 60 };
+  assert.equal(routineSchema.safeParse({ title: 'Too large', exercises: [{ slug: 'bench', setTargets: Array(101).fill(target) }] }).success, false);
+  const sets = Array.from({ length: 1001 }, (_, i) => ({ ...target, exerciseSlug: `exercise-${i}`, setNumber: 1 }));
+  assert.equal(workoutSchema.safeParse({ categoryId: 'custom', name: 'Too large', sets }).success, false);
+});

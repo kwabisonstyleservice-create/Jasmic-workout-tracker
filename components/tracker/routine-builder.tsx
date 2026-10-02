@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { WorkoutCategory } from "@/lib/catalog";
-import { routineSchema } from "@/lib/workout-validation";
+import { routineSchema, MAX_SETS_PER_EXERCISE, MAX_ROUTINE_EXERCISES } from "@/lib/workout-validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ export function SetEditor({ name, rows, onChange, live = false }: { name: string
       {live && <input type="checkbox" className="size-5 accent-lime-300" aria-label={`${name} set ${index + 1} completed`} checked={Boolean(row.completed)} onChange={(event) => update(index, "completed", event.target.checked)} />}
       <button type="button" className="h-10 text-zinc-400 hover:text-white disabled:opacity-30" disabled={rows.length <= 1} aria-label={`Remove ${name} set ${index + 1}`} onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>×</button>
     </div>)}
-    <Button type="button" variant="outline" className="mt-2 border-white/10 bg-transparent text-white" onClick={() => onChange([...rows, { reps: live ? "" : rows.at(-1)?.reps ?? "10", weightKg: live ? "" : rows.at(-1)?.weightKg ?? "0", completed: false }])}>+ Add set</Button>
+    <Button type="button" variant="outline" className="mt-2 border-white/10 bg-transparent text-white" disabled={rows.length >= MAX_SETS_PER_EXERCISE} onClick={() => onChange([...rows, { reps: live ? "" : rows.at(-1)?.reps ?? "10", weightKg: live ? "" : rows.at(-1)?.weightKg ?? "0", completed: false }])}>+ Add set</Button>
   </div>;
 }
 
@@ -56,7 +56,7 @@ export function RoutineBuilder({ catalog, routine, isDemo, onClose, onSaved }: {
   return <Dialog open onOpenChange={(open) => !open && !saving && onClose()}><DialogContent className="max-h-[92vh] overflow-y-auto border-white/10 bg-zinc-950 text-white sm:max-w-3xl">
     <DialogHeader><DialogTitle>{routine ? "Edit workout" : "Create workout"}</DialogTitle><DialogDescription className="text-zinc-400">Choose your exercises and set the reps and weight for each set.</DialogDescription></DialogHeader>
     <Label htmlFor="routine-title">Workout name</Label><Input id="routine-title" value={title} maxLength={80} onChange={(event) => setTitle(event.target.value)} placeholder="Monday push" className="border-white/10 bg-zinc-900" />
-    <Label htmlFor="routine-exercise">Add an exercise</Label><div className="flex gap-2"><select id="routine-exercise" value={selection} onChange={(event) => setSelection(event.target.value)} className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-900 px-3"><option value="">Choose from your library</option>{available.map((exercise) => <option key={exercise.slug} value={exercise.slug}>{exercise.name}</option>)}</select><Button type="button" disabled={!selection || saving} onClick={() => { const exercise = available.find((item) => item.slug === selection); if (exercise) setItems((current) => [...current, { exercise, rows: initialSets(exercise) }]); setSelection(""); }}>Add</Button></div>
+    <Label htmlFor="routine-exercise">Add an exercise</Label><div className="flex gap-2"><select id="routine-exercise" value={selection} onChange={(event) => setSelection(event.target.value)} className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-900 px-3"><option value="">Choose from your library</option>{available.map((exercise) => <option key={exercise.slug} value={exercise.slug}>{exercise.name}</option>)}</select><Button type="button" disabled={!selection || saving || items.length >= MAX_ROUTINE_EXERCISES} onClick={() => { const exercise = available.find((item) => item.slug === selection); if (exercise) setItems((current) => [...current, { exercise, rows: initialSets(exercise) }]); setSelection(""); }}>Add</Button></div>
     {!items.length && <p className="py-4 text-sm text-zinc-400">Choose an exercise to begin. You can mix muscle groups.</p>}
     {items.map((item, index) => <section key={item.exercise.slug} className="rounded-xl border border-white/10 p-4"><h3 className="font-bold">{index + 1}. {item.exercise.name}</h3><div className="mt-2 flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" disabled={index === 0 || saving} onClick={() => move(index, -1)}>Move up</Button><Button type="button" size="sm" variant="outline" disabled={index === items.length - 1 || saving} onClick={() => move(index, 1)}>Move down</Button><Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove exercise</Button></div><SetEditor name={item.exercise.name} rows={item.rows} onChange={(rows) => setItems((current) => current.map((entry, itemIndex) => itemIndex === index ? { ...entry, rows } : entry))} /></section>)}
     <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={saving} onClick={onClose}>Cancel</Button><Button type="button" className="bg-lime-300 text-zinc-950" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save workout"}</Button></div>
