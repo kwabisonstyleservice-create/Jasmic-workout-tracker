@@ -99,6 +99,7 @@ export const workoutTemplateExercises = pgTable(
     position: integer("position").notNull(),
     targetSets: integer("target_sets").notNull(),
     targetReps: varchar("target_reps", { length: 30 }).notNull(),
+    setTargets: jsonb("set_targets").$type<{ reps: number; weightKg: number }[]>(),
     restSeconds: integer("rest_seconds").notNull().default(90),
   },
   (table) => [primaryKey({ columns: [table.templateId, table.exerciseId] }), index("workout_template_exercises_position_idx").on(table.templateId, table.position)],

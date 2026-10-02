@@ -13,7 +13,7 @@ const exerciseSchema = z.object({
   name: z.string().trim().min(2).max(100),
   muscleGroup: z.string().trim().min(2).max(40),
   equipment: z.string().trim().min(2).max(60),
-  sets: z.coerce.number().int().min(1).max(20),
+  sets: z.coerce.number().int().min(1).max(2147483647),
   reps: z.string().trim().min(1).max(30),
 });
 

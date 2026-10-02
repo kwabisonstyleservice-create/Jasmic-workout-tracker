@@ -7,6 +7,7 @@ export type CatalogExercise = {
   sets: number;
   reps: string;
   note?: string;
+  setTargets?: { reps: number; weightKg: number }[];
 };
 
 export type WorkoutCategory = {

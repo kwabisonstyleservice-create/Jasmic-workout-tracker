@@ -5,6 +5,8 @@ A mobile-first workout and body-progress tracker built with Next.js, TypeScript,
 ## What is implemented
 
 - Interactive dashboard with workout count, training volume, streak and body-weight change.
+- Custom reusable workouts with mixed exercises, reordering, editing, and individual reps/weight targets for every set.
+- Add/remove sets during a workout; only sets marked done are logged, without changing the saved routine.
 - Workout logger for repetitions and kilograms, with persistent set history.
 - Six starter routines transcribed from the supplied images: biceps, back, shoulders, chest, legs and triceps.
 - 45 editable starter exercises, plus user-created exercises without a code change.
@@ -119,3 +121,9 @@ npm run db:seed
 - The source image for light deadlifts states “4 sets” but lists five rep targets (`10, 8, 6, 5, 4`); the seed data preserves that source exactly so it can be corrected by the product owner.
 - Review the included privacy text against the final production providers and business process before release.
 - Configure email verification and password recovery before public registration.
+
+## Custom workout release
+
+Apply `drizzle/0001_aromatic_sentinels.sql` using `npm run db:migrate` against an isolated database branch first, then against the standalone app database before deploying this version. It adds nullable `set_targets` JSONB to the existing template-exercise table; existing routines and logged sets are preserved. No seed is required for this upgrade. Supply a direct database URL to the migration command.
+
+In **Train → Create workout**, name a routine, select exercises, reorder them, and use **Add set** or the remove control to choose the set count. Each set has its own reps and kg target. Save, edit, or start the routine from **Custom workouts**. Add new exercises with the existing **Add exercise** control, then select them in the builder. During training, enter actual values and check **Done**; saving records only completed sets with their original row numbers. Closing a workout discards the unsaved session. Preview routines reset on refresh; signed-in routines reload from the database.

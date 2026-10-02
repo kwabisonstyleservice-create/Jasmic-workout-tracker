@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/db";
@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const db = getDb();
     let [plan] = await db.select({ id: trainingPlans.id }).from(trainingPlans).where(and(eq(trainingPlans.userId, user.id), eq(trainingPlans.isActive, true))).limit(1);
     if (!plan) [plan] = await db.insert(trainingPlans).values({ userId: user.id, title: "My training plan" }).returning({ id: trainingPlans.id });
-    const [template] = await db.select({ id: workoutTemplates.id }).from(workoutTemplates).where(eq(workoutTemplates.id, parsed.data.categoryId)).limit(1);
+    const [template] = await db.select({ id: workoutTemplates.id }).from(workoutTemplates).where(and(eq(workoutTemplates.id, parsed.data.categoryId), or(eq(workoutTemplates.isSystem, true), eq(workoutTemplates.ownerId, user.id)))).limit(1);
+    if (!template) return apiError("Workout is not available.", 422);
     const [planDay] = await db.insert(trainingPlanDays).values({ planId: plan.id, dayIndex: parsed.data.dayIndex, title: parsed.data.title, sourceTemplateId: template?.id }).returning({ id: trainingPlanDays.id });
     const templateExercises = await db.select().from(workoutTemplateExercises).where(eq(workoutTemplateExercises.templateId, parsed.data.categoryId)).orderBy(asc(workoutTemplateExercises.position));
     if (templateExercises.length) await db.insert(trainingPlanDayExercises).values(templateExercises.map((item) => ({ planDayId: planDay.id, exerciseId: item.exerciseId, position: item.position, targetSets: item.targetSets, targetReps: item.targetReps })));
