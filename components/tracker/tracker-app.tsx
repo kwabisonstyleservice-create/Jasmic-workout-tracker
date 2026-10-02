@@ -92,7 +92,11 @@ const navItems: { value: View; label: string; icon: typeof LayoutDashboard }[] =
   { value: "plan", label: "My plan", icon: CalendarDays },
 ];
 
-type WorkoutEntry = Record<string, { reps: string; weightKg: string }[]>;
+import { RoutineBuilder, SetEditor } from "@/components/tracker/routine-builder";
+import { completedSets, type SetRow } from "@/lib/workout-entries";
+import { workoutSchema, MAX_SETS_PER_EXERCISE } from "@/lib/workout-validation";
+
+type WorkoutEntry = Record<string, SetRow[]>;
 
 function Brand() {
   return (
@@ -432,59 +436,46 @@ function WorkoutDialog({ category, open, onOpenChange, isDemo }: { category: Wor
   const [entries, setEntries] = useState<WorkoutEntry>({});
   const [saving, setSaving] = useState(false);
 
-  function entryFor(exercise: CatalogExercise, setIndex: number) {
-    return entries[exercise.slug]?.[setIndex] ?? { reps: "", weightKg: "" };
-  }
-
-  function updateEntry(exercise: CatalogExercise, setIndex: number, field: "reps" | "weightKg", value: string) {
-    setEntries((current) => {
-      const rows = current[exercise.slug] ? [...current[exercise.slug]] : Array.from({ length: exercise.sets }, () => ({ reps: "", weightKg: "" }));
-      rows[setIndex] = { ...rows[setIndex], [field]: value };
-      return { ...current, [exercise.slug]: rows };
-    });
+  function rowsFor(exercise: CatalogExercise) {
+    return entries[exercise.slug] ?? Array.from({ length: exercise.sets }, () => ({ reps: "", weightKg: "", completed: false }));
   }
 
   async function finishWorkout() {
     if (!category) return;
+    const sets = category.exercises.flatMap((exercise) => completedSets(exercise.slug, rowsFor(exercise)));
+    const parsed = workoutSchema.safeParse({ categoryId: category.id, name: category.title, sets });
+    if (!parsed.success) { toast.error("Mark at least one set as done and enter valid reps and weight. Use 0 kg for bodyweight exercises."); return; }
     setSaving(true);
-    const sets = Object.entries(entries).flatMap(([exerciseSlug, rows]) => rows.filter((row) => row.reps || row.weightKg).map((row, setIndex) => ({ exerciseSlug, setNumber: setIndex + 1, reps: Number(row.reps || 0), weightKg: Number(row.weightKg || 0) })));
-    if (!isDemo) {
-      const response = await fetch("/api/workouts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ categoryId: category.id, name: `${category.title} workout`, sets }) });
-      if (!response.ok) {
-        toast.error("Workout could not be saved. Please try again.");
-        setSaving(false);
-        return;
+    try {
+      if (!isDemo) {
+        const response = await fetch("/api/workouts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(parsed.data) });
+        if (!response.ok) throw new Error("Workout could not be saved. Please try again.");
       }
-    }
-    toast.success(isDemo ? "Preview workout completed" : "Workout saved to your history");
-    setSaving(false);
-    setEntries({});
-    onOpenChange(false);
+      toast.success(isDemo ? "Preview workout completed" : "Workout saved to your history");
+      setEntries({}); onOpenChange(false);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Workout could not be saved."); }
+    finally { setSaving(false); }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
       <DialogContent className="max-h-[92vh] overflow-hidden border-white/10 bg-zinc-950 p-0 text-white sm:max-w-3xl">
         <DialogHeader className="border-b border-white/10 p-5 text-left sm:p-6">
           <div className="flex items-center gap-3"><span className="tag tag-lime">Live workout</span><span className="text-sm text-zinc-500">00:00</span></div>
           <DialogTitle className="mt-2 text-3xl font-black tracking-tight">{category?.title ?? "Workout"}</DialogTitle>
-          <DialogDescription className="text-zinc-400">Enter the repetitions and weight you complete. Empty sets are ignored.</DialogDescription>
+          <DialogDescription className="text-zinc-400">Enter your actual reps and weight, then mark each completed set as done. Only completed sets are saved.</DialogDescription>
         </DialogHeader>
         <div className="max-h-[58vh] space-y-4 overflow-y-auto px-5 py-1 sm:px-6">
           {category?.exercises.map((exercise, exerciseIndex) => (
             <section key={exercise.slug} className="rounded-2xl border border-white/8 bg-white/[0.025] p-4">
               <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black tracking-[0.2em] text-zinc-600">{String(exerciseIndex + 1).padStart(2, "0")}</p><h3 className="mt-1 font-black text-white">{exercise.name}</h3><p className="mt-1 text-sm text-zinc-500">Target: {exercise.sets} × {exercise.reps}</p></div><Dumbbell className="size-5 text-lime-300" /></div>
-              <div className="mt-4 grid grid-cols-[2rem_1fr_1fr] gap-2 text-center text-xs font-bold uppercase tracking-wider text-zinc-600"><span>Set</span><span>kg</span><span>reps</span></div>
-              <div className="mt-2 space-y-2">
-                {Array.from({ length: exercise.sets }, (_, setIndex) => (
-                  <div key={setIndex} className="grid grid-cols-[2rem_1fr_1fr] items-center gap-2"><span className="text-center text-sm font-black text-zinc-500">{setIndex + 1}</span><Input inputMode="decimal" aria-label={`${exercise.name} set ${setIndex + 1} weight in kilograms`} value={entryFor(exercise, setIndex).weightKg} onChange={(event) => updateEntry(exercise, setIndex, "weightKg", event.target.value)} placeholder="0" className="h-11 rounded-xl border-white/10 bg-zinc-900 text-center text-white" /><Input inputMode="numeric" aria-label={`${exercise.name} set ${setIndex + 1} repetitions`} value={entryFor(exercise, setIndex).reps} onChange={(event) => updateEntry(exercise, setIndex, "reps", event.target.value)} placeholder="0" className="h-11 rounded-xl border-white/10 bg-zinc-900 text-center text-white" /></div>
-                ))}
-              </div>
+              {exercise.setTargets && <p className="mt-2 text-sm text-zinc-400">Planned: {exercise.setTargets.map((set) => `${set.reps} reps at ${set.weightKg} kg`).join(" / ")}</p>}
+              <SetEditor name={exercise.name} live rows={rowsFor(exercise)} onChange={(rows) => setEntries((current) => ({ ...current, [exercise.slug]: rows }))} />
             </section>
           ))}
         </div>
         <DialogFooter className="border-t border-white/10 p-5 sm:p-6">
-          <Button variant="outline" className="rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white" onClick={() => onOpenChange(false)}>Pause</Button>
+          <Button variant="outline" className="rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white" disabled={saving} onClick={() => onOpenChange(false)}>Close workout</Button>
           <Button className="rounded-xl bg-lime-300 font-black text-zinc-950 hover:bg-lime-200" onClick={finishWorkout} disabled={saving}><Check className="size-4" /> {saving ? "Saving…" : "Finish & save"}</Button>
         </DialogFooter>
       </DialogContent>
@@ -578,7 +569,7 @@ function AddExerciseDialog({ open, onOpenChange, isDemo, onSaved }: { open: bool
     onOpenChange(false);
   }
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="border-white/10 bg-zinc-950 text-white"><DialogHeader><DialogTitle className="text-2xl font-black">Add a custom exercise</DialogTitle><DialogDescription className="text-zinc-400">Grow the exercise library without changing the application code.</DialogDescription></DialogHeader><form action={submit} className="space-y-4"><div><Label htmlFor="exerciseName">Exercise name</Label><Input id="exerciseName" name="name" required maxLength={100} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="muscleGroup">Muscle group</Label><Input id="muscleGroup" name="muscleGroup" required maxLength={40} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div><div><Label htmlFor="equipment">Equipment</Label><Input id="equipment" name="equipment" required maxLength={60} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div></div><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="sets">Default sets</Label><Input id="sets" name="sets" type="number" min="1" max="20" defaultValue="4" required className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div><div><Label htmlFor="reps">Rep target</Label><Input id="reps" name="reps" defaultValue="8–12" required maxLength={30} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div></div><DialogFooter><Button type="button" variant="outline" className="rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" disabled={saving} className="rounded-xl bg-lime-300 font-black text-zinc-950 hover:bg-lime-200">{saving ? "Adding…" : "Add exercise"}</Button></DialogFooter></form></DialogContent></Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="border-white/10 bg-zinc-950 text-white"><DialogHeader><DialogTitle className="text-2xl font-black">Add a custom exercise</DialogTitle><DialogDescription className="text-zinc-400">Grow the exercise library without changing the application code.</DialogDescription></DialogHeader><form action={submit} className="space-y-4"><div><Label htmlFor="exerciseName">Exercise name</Label><Input id="exerciseName" name="name" required maxLength={100} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="muscleGroup">Muscle group</Label><Input id="muscleGroup" name="muscleGroup" required maxLength={40} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div><div><Label htmlFor="equipment">Equipment</Label><Input id="equipment" name="equipment" required maxLength={60} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div></div><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="sets">Default sets</Label><Input id="sets" name="sets" type="number" min="1" max={MAX_SETS_PER_EXERCISE} defaultValue="3" required className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div><div><Label htmlFor="reps">Rep target</Label><Input id="reps" name="reps" defaultValue="8–12" required maxLength={30} className="mt-2 h-11 rounded-xl border-white/10 bg-zinc-900" /></div></div><DialogFooter><Button type="button" variant="outline" className="rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" disabled={saving} className="rounded-xl bg-lime-300 font-black text-zinc-950 hover:bg-lime-200">{saving ? "Adding…" : "Add exercise"}</Button></DialogFooter></form></DialogContent></Dialog>
   );
 }
 
@@ -610,6 +601,8 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
   const [measurementOpen, setMeasurementOpen] = useState(false);
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [dayOpen, setDayOpen] = useState(false);
+  const [routines, setRoutines] = useState(initialData.routines ?? []);
+  const [routineEditor, setRoutineEditor] = useState<WorkoutCategory | "new" | null>(null);
   const [measurements, setMeasurements] = useState(initialData.measurements);
   const [catalog, setCatalog] = useState(initialData.catalog);
   const [programDays, setProgramDays] = useState(initialData.programDays);
@@ -640,6 +633,11 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
         <div className="mx-auto max-w-[92rem] px-4 py-5 pb-28 sm:px-6 sm:py-7 lg:px-8 lg:pb-10">
           {isDemo && <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-orange-400/20 bg-orange-400/[0.07] px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span className="text-orange-100"><strong>Interactive preview:</strong> entries reset when you refresh. A signed-in account saves securely.</span><Link href="/register" className="inline-flex shrink-0 items-center gap-2 font-black text-orange-300">Create account <ArrowRight className="size-4" /></Link></div>}
           {view === "today" && <Dashboard data={data} onStart={(category) => setActiveWorkout(category)} />}
+          {view === "train" && <section className="mb-8 space-y-4">
+            <SectionHeading eyebrow="Your routines" title="Custom workouts" action={<Button className="bg-lime-300 text-zinc-950" onClick={() => setRoutineEditor("new")}>+ Create workout</Button>} />
+            {!routines.length && <p className="text-zinc-400">Build a reusable workout with your choice of exercises, sets and reps.</p>}
+            <div className="grid gap-3 sm:grid-cols-2">{routines.map((routine) => <article key={routine.id} className="surface-card"><h3 className="text-xl font-bold">{routine.title}</h3><p className="mt-2 text-sm text-zinc-400">{routine.exercises.length} exercises · {routine.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)} sets</p><div className="mt-4 flex gap-2"><Button className="bg-lime-300 text-zinc-950" onClick={() => setActiveWorkout(routine)}>Start workout</Button><Button variant="outline" onClick={() => setRoutineEditor(routine)}>Edit</Button></div></article>)}</div>
+          </section>}
           {view === "train" && <TrainingLibrary catalog={data.catalog} onStart={(category) => setActiveWorkout(category)} onAddExercise={() => setExerciseOpen(true)} />}
           {view === "progress" && <ProgressView data={data} onAddMeasurement={() => setMeasurementOpen(true)} />}
           {view === "plan" && <PlanView catalog={data.catalog} days={data.programDays} onAddDay={() => setDayOpen(true)} />}
@@ -650,14 +648,15 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
         {navItems.map((item) => { const Icon = item.icon; const active = view === item.value; return <button key={item.value} onClick={() => changeView(item.value)} className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[0.72rem] font-bold ${active ? "bg-lime-300 text-zinc-950" : "text-zinc-500"}`}><Icon className="size-5" />{item.label}</button>; })}
       </nav>
 
-      <WorkoutDialog category={activeWorkout} open={Boolean(activeWorkout)} onOpenChange={(open) => !open && setActiveWorkout(null)} isDemo={isDemo} />
+      {routineEditor && <RoutineBuilder catalog={catalog} routine={routineEditor === "new" ? undefined : routineEditor} isDemo={isDemo} onClose={() => setRoutineEditor(null)} onSaved={(routine) => setRoutines((current) => current.some((item) => item.id === routine.id) ? current.map((item) => item.id === routine.id ? routine : item) : [...current, routine])} />}
+      <WorkoutDialog key={activeWorkout?.id ?? "none"} category={activeWorkout} open={Boolean(activeWorkout)} onOpenChange={(open) => !open && setActiveWorkout(null)} isDemo={isDemo} />
       <MeasurementDialog open={measurementOpen} onOpenChange={setMeasurementOpen} isDemo={isDemo} onSaved={(measurement) => setMeasurements((current) => [...current, measurement].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)))} />
       <AddExerciseDialog open={exerciseOpen} onOpenChange={setExerciseOpen} isDemo={isDemo} onSaved={(exercise) => setCatalog((current) => {
         const existing = current.find((category) => category.id === "custom");
         if (existing) return current.map((category) => category.id === "custom" ? { ...category, exercises: [...category.exercises, exercise] } : category);
         return [...current, { id: "custom", title: "Custom", accent: "#d8b4fe", exercises: [exercise] }];
       })} />
-      <AddDayDialog open={dayOpen} onOpenChange={setDayOpen} catalog={data.catalog} isDemo={isDemo} onSaved={(day) => setProgramDays((current) => [...current, day].sort((a, b) => a.dayIndex - b.dayIndex))} />
+      <AddDayDialog open={dayOpen} onOpenChange={setDayOpen} catalog={[...data.catalog, ...routines]} isDemo={isDemo} onSaved={(day) => setProgramDays((current) => [...current, day].sort((a, b) => a.dayIndex - b.dayIndex))} />
       <Toaster richColors position="top-right" />
     </main>
   );

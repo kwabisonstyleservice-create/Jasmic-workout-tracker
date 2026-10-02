@@ -47,4 +47,5 @@ export type TrackerData = {
   personalBests: PersonalBest[];
   programDays: ProgramDay[];
   catalog: WorkoutCategory[];
+  routines?: WorkoutCategory[];
 };

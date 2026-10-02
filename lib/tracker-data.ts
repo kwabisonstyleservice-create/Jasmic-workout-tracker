@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { getDb } from "@/db";
-import { bodyMeasurements, exercises, setLogs, trainingPlanDays, trainingPlans, workoutSessions, workoutTemplates } from "@/db/schema";
+import { bodyMeasurements, exercises, setLogs, trainingPlanDays, trainingPlans, workoutSessions, workoutTemplates, workoutTemplateExercises } from "@/db/schema";
 import { workoutCatalog, type WorkoutCategory } from "@/lib/catalog";
 import type { AuthenticatedUser } from "@/lib/auth";
 import type { TrackerData } from "@/lib/tracker-types";
@@ -110,7 +110,25 @@ export async function getTrackerData(user: AuthenticatedUser): Promise<TrackerDa
     });
   }
 
+  const routineRows = await db.select({
+    id: workoutTemplates.id, title: workoutTemplates.title,
+    slug: exercises.slug, name: exercises.name, equipment: exercises.equipment,
+    sets: workoutTemplateExercises.targetSets, reps: workoutTemplateExercises.targetReps,
+    setTargets: workoutTemplateExercises.setTargets,
+  }).from(workoutTemplates)
+    .innerJoin(workoutTemplateExercises, eq(workoutTemplateExercises.templateId, workoutTemplates.id))
+    .innerJoin(exercises, eq(workoutTemplateExercises.exerciseId, exercises.id))
+    .where(and(eq(workoutTemplates.ownerId, user.id), eq(workoutTemplates.isSystem, false)))
+    .orderBy(asc(workoutTemplates.createdAt), asc(workoutTemplateExercises.position));
+  const routines: WorkoutCategory[] = [];
+  for (const row of routineRows) {
+    let routine = routines.find((item) => item.id === row.id);
+    if (!routine) { routine = { id: row.id, title: row.title, accent: "#c7ff4a", exercises: [] }; routines.push(routine); }
+    routine.exercises.push({ slug: row.slug, name: row.name, equipment: row.equipment, sets: row.sets, reps: row.reps, setTargets: row.setTargets ?? undefined });
+  }
+
   return {
+    routines,
     user: { id: user.id, displayName: user.displayName, role: user.role },
     stats: {
       workoutsThisMonth: sessionIdsThisMonth.size,
