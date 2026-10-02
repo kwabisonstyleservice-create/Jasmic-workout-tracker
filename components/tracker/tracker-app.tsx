@@ -142,7 +142,7 @@ function SectionHeading({ eyebrow, title, action }: { eyebrow: string; title: st
   );
 }
 
-function Dashboard({ data, onStart }: { data: TrackerData; onStart: (category: WorkoutCategory) => void }) {
+function Dashboard({ data, onStart, onViewPerformance }: { data: TrackerData; onStart: (category: WorkoutCategory) => void; onViewPerformance: () => void }) {
   const today = data.catalog.find((category) => category.id === "chest") ?? data.catalog[0];
 
   return (
@@ -247,7 +247,7 @@ function Dashboard({ data, onStart }: { data: TrackerData; onStart: (category: W
               </div>
             ))}
           </div>
-          <Button variant="outline" className="mt-5 h-11 w-full rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white">
+          <Button type="button" onClick={onViewPerformance} variant="outline" className="mt-5 h-11 w-full rounded-xl border-white/10 bg-transparent text-white hover:bg-white/5 hover:text-white">
             View performance <ArrowRight className="size-4" />
           </Button>
         </article>
@@ -632,7 +632,7 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
 
         <div className="mx-auto max-w-[92rem] px-4 py-5 pb-28 sm:px-6 sm:py-7 lg:px-8 lg:pb-10">
           {isDemo && <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-orange-400/20 bg-orange-400/[0.07] px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span className="text-orange-100"><strong>Interactive preview:</strong> entries reset when you refresh. A signed-in account saves securely.</span><div className="flex w-full shrink-0 flex-col gap-2 min-[360px]:flex-row sm:w-auto"><Link href="/register" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-lime-300 px-5 py-2.5 font-bold text-zinc-950 transition hover:bg-lime-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-300">Create account</Link><Link href="/login" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-zinc-900 px-5 py-2.5 font-bold text-white transition hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-300">Sign in</Link></div></div>}
-          {view === "today" && <Dashboard data={data} onStart={(category) => setActiveWorkout(category)} />}
+          {view === "today" && <Dashboard data={data} onStart={(category) => setActiveWorkout(category)} onViewPerformance={() => changeView("progress")} />}
           {view === "train" && <section className="mb-8 space-y-4">
             <SectionHeading eyebrow="Your routines" title="Custom workouts" action={<Button className="bg-lime-300 text-zinc-950" onClick={() => setRoutineEditor("new")}>+ Create workout</Button>} />
             {!routines.length && <p className="text-zinc-400">Build a reusable workout with your choice of exercises, sets and reps.</p>}
