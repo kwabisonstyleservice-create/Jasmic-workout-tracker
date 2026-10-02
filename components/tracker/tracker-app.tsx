@@ -276,9 +276,20 @@ function ExerciseRow({ exercise, index }: { exercise: CatalogExercise; index: nu
 }
 
 function TrainingLibrary({ catalog, routines, activeCategoryId, onSelect, onStart, onAddExercise, onEditRoutine }: { catalog: WorkoutCategory[]; routines: WorkoutCategory[]; activeCategoryId: string; onSelect: (id: string) => void; onStart: (category: WorkoutCategory) => void; onAddExercise: () => void; onEditRoutine: (routine: WorkoutCategory) => void }) {
-  const trainingOptions = [...catalog, ...routines];
+  const trainingOptions = [
+    ...catalog.flatMap((category) => category.id === "custom"
+      ? category.exercises.map((exercise) => ({
+          id: `exercise:${exercise.slug}`,
+          title: exercise.name,
+          accent: category.accent,
+          exercises: [exercise],
+        }))
+      : [category]),
+    ...routines,
+  ];
   const active = trainingOptions.find((item) => item.id === activeCategoryId) ?? trainingOptions[0];
   const isPersonalRoutine = routines.some((routine) => routine.id === active.id);
+  const isPersonalExercise = active.id.startsWith("exercise:");
 
   return (
     <div className="space-y-6">
@@ -305,7 +316,7 @@ function TrainingLibrary({ catalog, routines, activeCategoryId, onSelect, onStar
         <article className="workout-poster rounded-[2rem] border border-white/10 p-6 sm:p-8" style={{ "--poster-accent": active.accent } as React.CSSProperties}>
           <div className="relative z-10 flex min-h-[28rem] flex-col justify-between">
             <div>
-              <span className="tag border-white/10 bg-white/5 text-zinc-300">{isPersonalRoutine ? "My workout · Private" : "Starter routine"}</span>
+              <span className="tag border-white/10 bg-white/5 text-zinc-300">{isPersonalRoutine ? "My workout · Private" : isPersonalExercise ? "My exercise · Private" : "Starter routine"}</span>
               <p className="mt-8 text-sm font-black uppercase tracking-[0.24em] text-zinc-400">Train</p>
               <h2 className="mt-2 break-words text-4xl font-black uppercase leading-tight tracking-[-0.04em] text-white sm:text-5xl">{active.title}</h2>
               <div className="mt-5 h-1.5 w-20 rounded-full" style={{ background: active.accent }} />
@@ -655,11 +666,11 @@ export function TrackerApp({ initialData, isDemo = false }: { initialData: Track
       {routineEditor && <RoutineBuilder catalog={catalog} routine={routineEditor === "new" ? undefined : routineEditor} isDemo={isDemo} onClose={() => setRoutineEditor(null)} onSaved={(routine) => { setRoutines((current) => current.some((item) => item.id === routine.id) ? current.map((item) => item.id === routine.id ? routine : item) : [...current, routine]); setTrainingSelection(routine.id); changeView("train"); }} />}
       <WorkoutDialog key={activeWorkout?.id ?? "none"} category={activeWorkout} open={Boolean(activeWorkout)} onOpenChange={(open) => !open && setActiveWorkout(null)} isDemo={isDemo} />
       <MeasurementDialog open={measurementOpen} onOpenChange={setMeasurementOpen} isDemo={isDemo} onSaved={(measurement) => setMeasurements((current) => [...current, measurement].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)))} />
-      <AddExerciseDialog open={exerciseOpen} onOpenChange={setExerciseOpen} isDemo={isDemo} onSaved={(exercise) => setCatalog((current) => {
+      <AddExerciseDialog open={exerciseOpen} onOpenChange={setExerciseOpen} isDemo={isDemo} onSaved={(exercise) => { setTrainingSelection(`exercise:${exercise.slug}`); changeView("train"); setCatalog((current) => {
         const existing = current.find((category) => category.id === "custom");
         if (existing) return current.map((category) => category.id === "custom" ? { ...category, exercises: [...category.exercises, exercise] } : category);
         return [...current, { id: "custom", title: "Custom", accent: "#d8b4fe", exercises: [exercise] }];
-      })} />
+      }); }} />
       <AddDayDialog open={dayOpen} onOpenChange={setDayOpen} catalog={[...data.catalog, ...routines]} isDemo={isDemo} onSaved={(day) => setProgramDays((current) => [...current, day].sort((a, b) => a.dayIndex - b.dayIndex))} />
       <Toaster richColors position="top-right" />
     </main>

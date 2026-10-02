@@ -17,7 +17,7 @@ export const routineSchema = z.object({
   })).min(1).max(MAX_ROUTINE_EXERCISES).refine((items) => items.reduce((total, item) => total + item.setTargets.length, 0) <= MAX_WORKOUT_SETS, "A workout can contain up to 1000 sets.").refine((items) => new Set(items.map((item) => item.slug)).size === items.length, "Choose each exercise only once."),
 });
 export const workoutSchema = z.object({
-  categoryId: z.string().min(1).max(80),
+  categoryId: z.string().min(1).max(140),
   name: z.string().trim().min(2).max(100),
   durationSeconds: z.number().int().min(0).max(86400).optional(),
   sets: z.array(setTargetSchema.extend({
